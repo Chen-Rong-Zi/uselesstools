@@ -191,13 +191,20 @@ def swap_column(matr, x, y):
 def five_place(x):
     return int(x * 1e4) / 1e4
 # test
-list1 = [1, 0]
-list2 = [2, 3]
-list3 = [4, 5]
-list4 = [2, 1]
-list5 = [4, 3]
-a = matrix([list1, list2, list3])
-b = matrix([list4, list5])
+row1 = [1, 0]
+row2 = [2, 3]
+row3 = [4, 5]
+row4 = [2, 1]
+row5 = [4, 3]
+row6 = [1, 0]
+row7 = [2, 3]
+row8 = [4, 5]
+row9 = [2, 1]
+row10 = [4, 3]
+a = matrix([row6, row7, row8])
+b = matrix([row9, row10])
+c = matrix([row1, row2, row3])
+d = matrix([row4, row5])
 add      = add_matrix
 adjoint  = adjoint_matrix
 det      = determinant
