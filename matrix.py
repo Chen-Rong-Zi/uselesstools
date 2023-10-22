@@ -3,6 +3,13 @@
 def is_matrix(matrix):
     return matrix[1] == 'matrix' and type(matrix) == tuple and len(matrix) == 2 
 
+def make_matrix(*args):
+    row, column = (args[0], args[0]) if len(args) == 1 else (args[0], args[1])
+    rows_list = []
+    for i in range(row):
+        rows_list.append([int(input(f"[{i+1},{j+1}]: ")) for j in range(column)])
+    return matrix(rows_list)
+
 def matrix(*args, Type='matrix'):
     assert Type == 'matrix'
     assert len(args[0]) >= 1, "matrix must has lenth and width"
@@ -11,7 +18,7 @@ def matrix(*args, Type='matrix'):
         assert rowLenth == len(row) and type(row) == list
     return args + ('matrix',)
 
-def printm(matrix):
+def print_matrix(matrix):
     assert is_matrix(matrix), "must be a matrix"
 
     lenth_list = []
@@ -105,6 +112,7 @@ def transfer(matr):
     return matrix(columns(matr))
 
 def adjoint_matrix(matr):
+    assert matrix_row(matr) == matrix_column(matr), "只有方阵才有伴随矩阵"
     rows_list = []
     for i in range(matrix_row(matr)):
         row = []
@@ -131,9 +139,13 @@ def determinant(matr):
     assert is_matrix(matr), "must be a matrix"
     assert matrix_row(matr) == matrix_column(matr), "只有方阵才有行列式"
 
+    if matrix_row(matr) == 1:
+        return rows(matr)[0][0]
+
     original_rows = rows(matr)
     if matrix_row(matr) == 2:
         return original_rows[0][0] * original_rows[1][1] - original_rows[0][1] * original_rows[1][0]
+
     result = 0
     for i in range(matrix_column(matr)):
         result += original_rows[0][i] * determinant(cofactor(matr, 0, i)) * pow(-1, i)
@@ -179,9 +191,23 @@ def swap_column(matr, x, y):
 def five_place(x):
     return int(x * 1e4) / 1e4
 # test
-list1 = [1, 2, 3]
-list2 = [0, 5, 6]
-list3 = [0, 0, 4]
+list1 = [1, 0]
+list2 = [2, 3]
+list3 = [4, 5]
+list4 = [2, 1]
+list5 = [4, 3]
 a = matrix([list1, list2, list3])
-b = matrix([[7, 8], [9, 10], [11, 12]])
-
+b = matrix([list4, list5])
+add      = add_matrix
+adjoint  = adjoint_matrix
+det      = determinant
+make     = make_matrix
+mul      = mul_matrix
+powm     = pow_matrix
+p        = print_matrix
+swcolumn = swap_column
+swrow    = swap_row
+tran     = transfer
+E_matr   = identity_matrix
+reverse  = reverse_matrix
+kth      = kth_matrix
