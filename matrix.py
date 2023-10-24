@@ -1,7 +1,7 @@
 # encoding=UTF-8
 
-def is_matrix(matrix):
-    return matrix[1] == 'matrix' and type(matrix) == tuple and len(matrix) == 2 
+def is_matrix(matr):
+    return hasattr(matr, '__call__')
 
 def make_matrix(*args):
     row, column = (args[0], args[0]) if len(args) == 1 else (args[0], args[1])
@@ -16,13 +16,21 @@ def matrix(*args, Type='matrix'):
     rowLenth = len(args[0][0])
     for row in args[0]:
         assert rowLenth == len(row) and type(row) == list
-    return args + ('matrix',)
+    def matrix_function(x, y='noparameter'):
+        if x == 'row':
+            return len(args[0])
+        if x == 'column':
+            return len(args[0][0])
+        if y == 'noparameter':
+            return args[0][x]
+        return args[0][x][y]
+    return matrix_function
 
 def print_matrix(matrix):
     assert is_matrix(matrix), "must be a matrix"
 
     lenth_list = []
-    for j in range(matrix_column(matrix)):
+    for j in range(matrix('column')):
         lenth_list.append( max( [ len(str(i)) for i in columns(matrix)[j] ] ) )
 
     for i in rows(matrix):
@@ -32,27 +40,29 @@ def print_matrix(matrix):
 
 def matrix_type(matrix):
     assert is_matrix(matrix), "must be a matrix" 
-    return len(matrix[0]), len(matrix[0][0])
+    return matrix('row'), matrix('column')
 
-def rows(matrix):
-    assert is_matrix(matrix), "must be a matrix"
-    return matrix[0]
+def matrix_row(matr):
+    assert is_matrix(matr), "must be a matrix"
+    return matr('row')
 
-def columns(matrix):
-    assert is_matrix(matrix), "must be a matrix"
-    matrix_rows = rows(matrix)      # basically the rows of matrix is matrix itself
+def matrix_column(matr):
+    assert is_matrix(matr), "must be a matrix"
+    return matr('column')
+
+def rows(matr):
+    assert is_matrix(matr), "must be a matrix"
+    rows_list = []
+    for i in range(matr('row')):
+        rows_list.append(copy_list(matr(i)))
+    return rows_list
+
+def columns(matr):
+    assert is_matrix(matr), "must be a matrix"
     columns_list = []
-    for column in range(matrix_column(matrix)):
-        columns_list.append([ matrix_rows[i][column] for i in range(matrix_row(matrix)) ])
+    for column in range(matr('column')):
+        columns_list.append([ matr(i, column) for i in range(matr('row')) ])
     return columns_list # already checked, safe array!
-
-def matrix_row(matrix):
-    assert is_matrix(matrix), "must be a matrix"
-    return matrix_type(matrix)[0]
-
-def matrix_column(matrix):
-    assert is_matrix(matrix), "must be a matrix"
-    return matrix_type(matrix)[1]
 
 def copy_matrix(m):
     return matrix([copy_list(i) for i in rows(m)])
@@ -64,7 +74,7 @@ def copy_list(lst):
 
 def mul_matrix(m1, m2):
     assert is_matrix(m1) and is_matrix(m2)
-    assert matrix_column(m1) == matrix_row(m2), "不合法的矩阵乘法"
+    assert m1('column') == m2('row'), "不合法的矩阵乘法"
 
     def multiply_helper(list1, list2):
         assert len(list1) == len(list2)
@@ -74,49 +84,58 @@ def mul_matrix(m1, m2):
         return five_place(product)
 
     result = []
-    for i in range(matrix_row(m1)):
+    for i in range(m1('row')):
         row_list = []
-        list1 = copy_list(rows(m1)[i])                               # for the whole row
-        for j in range(matrix_column(m2)):
-            list2 = copy_list(columns(m2)[j])                        # for the whole column
+        list1 = m1(i)                               # for the whole row
+        for j in range(m2('column')):
+            list2 = columns(m2)[j]                        # for the whole column
             row_list.append(multiply_helper(list1, list2))
         result.append(row_list)
     return matrix(result)
 
-def kth_matrix(m, k):
-    assert is_matrix(m) and k != 0, 'must be a matrix and k must not be 0'
-    original_rows = rows(m)
+def kth_matrix(matr, k):
+    assert is_matrix(matr) and k != 0, 'must be a matrix and k must not be 0'
+    original_rows = rows(matr)
     new_rows = []
-    for j in range(matrix_row(m)):
-        new_rows.append([five_place(k * i) for i in original_rows[j]])
+    for j in range(matr('row')):
+        new_rows.append([five_place(k * i) for i in matr(j)])
     return matrix(new_rows)
 
-def pow_matrix(m, n):
-    x = copy_matrix(m)
+def pow_matrix(matr, n):
+    x = copy_matrix(matr)
     for i in range(n-1):
-        m = mul_matrix(m, x)
-    return m
+        matr = mul_matrix(matr, x)
+    return matr
 
 def add_matrix(m1, m2):
     """return a new matrix for the sake of mutability of list.
     """
     assert is_matrix(m1) and is_matrix(m2) and matrix_type(m1) == matrix_type(m2)
-    newRows = []
-    column = matrix_column(m1)
-    for i in range(matrix_row(m1)):
-        newRows.append([rows(m1)[i][j] + rows(m2)[i][j] for j in range(column)])
-    return matrix(newRows)  # already checked, safe array!
+    new_rows = []
+    for i in range(m1('row')):
+        new_rows.append([m1(i, j) + m2(i, j) for j in range(m1('column'))])
+    return matrix(new_rows)  # already checked, safe array!
 
 def transfer(matr):
     assert is_matrix(matr)
     return matrix(columns(matr))
 
+def cofactor(matr, row, column):
+    assert is_matrix(matr), "must be a matrix"
+    assert matrix_row(matr) == matrix_column(matr), "只有方阵才有代数余子式"
+
+    row_list = []
+    for i in range(matr('row')):
+        if i == row: continue
+        row_list.append([matr(i, j) for j in range(matr('column')) if j != column])
+    return matrix(row_list)
+
 def adjoint_matrix(matr):
     assert matrix_row(matr) == matrix_column(matr), "只有方阵才有伴随矩阵"
     rows_list = []
-    for i in range(matrix_row(matr)):
-        row = []
-        for j in range(matrix_column(matr)):
+    for i in range(matr('row')):
+        new_rows = []
+        for j in range(matr('column')):
             row.append(determinant(cofactor(matr, i, j)) * pow(-1, i+j))
         rows_list.append(row)
     return transfer(matrix(rows_list))
@@ -124,31 +143,19 @@ def adjoint_matrix(matr):
 def reverse_matrix(matr):
     return kth_matrix(adjoint_matrix(matr), 1/determinant(matr))
 
-def cofactor(matr, row, column):
-    assert is_matrix(matr), "must be a matrix"
-    assert matrix_row(matr) == matrix_column(matr), "只有方阵才有代数余子式"
-
-    row_list = []
-    for i in range(matrix_row(matr)):
-        if i == row: continue
-        origin_rows = rows(matr)
-        row_list.append([origin_rows[i][j] for j in range(matrix_column(matr)) if j != column])
-    return matrix(row_list)
-
 def determinant(matr):
     assert is_matrix(matr), "must be a matrix"
     assert matrix_row(matr) == matrix_column(matr), "只有方阵才有行列式"
 
     if matrix_row(matr) == 1:
-        return rows(matr)[0][0]
+        return matr(0, 0)
 
-    original_rows = rows(matr)
     if matrix_row(matr) == 2:
-        return original_rows[0][0] * original_rows[1][1] - original_rows[0][1] * original_rows[1][0]
+        return matr(0, 0) * matr(1, 1) - matr(0, 1) * matr(1, 0)
 
     result = 0
     for i in range(matrix_column(matr)):
-        result += original_rows[0][i] * determinant(cofactor(matr, 0, i)) * pow(-1, i)
+        result += matr(0, i) * determinant(cofactor(matr, 0, i)) * pow(-1, i)
     return result
 
 def zero_matrix(*args):
@@ -160,22 +167,24 @@ def zero_matrix(*args):
     lst = [0 for i in range(column)]
     return matrix([copy_list(lst) for i in range(row)])
 
-def identity_matrix(n, x=1, y=1):
-    zero_rows = rows(zero_matrix(n))
+def identity_matrix(n, x=0, y=0):
+    assert x != y, "can't swap the same row"
+    rows_list = []
     for i in range(n):
-        if i == x-1:
-            zero_rows[i][i] = 0
-            zero_rows[i][y-1] = 1
-            continue
-        elif i == y-1:
-            zero_rows[i][i] = 0
-            zero_rows[i][x-1] = 1
-            continue
-        else:
-            zero_rows[i][i] = 1
-
-        zero_rows[i][i] = 1
-    return matrix(zero_rows)
+        row = []
+        for j in range(n):
+            if (i == x and i == j) or (i == y and i == j):
+                row.append(0)
+                continue
+            if (i == x and j == y) or (i == y and j == x):
+                row.append(1)
+                continue
+            if j == i:
+                row.append(1)
+                continue
+            row.append(0)
+        rows_list.append(row)
+    return matrix(rows_list)
 
 def swap_row(matr, x, y):
     assert is_matrix(matr), "must be a matrix"
@@ -189,7 +198,14 @@ def swap_column(matr, x, y):
     return transfer(mul_matrix(E, tran))
 
 def five_place(x):
-    return int(x * 1e4) / 1e4
+    if x == 0:
+        return 0
+    if x > 0:
+        decimal = x % 1
+        return int(x) if (decimal) <= 1e-6 else int(x)+1 if (1-decimal) <= 1e6 else x
+    else:
+        decimal = (-x) % 1
+        return -int(x) if (decimal) <= 1e-6 else -(int(x)+1) if (1-decimal) <= 1e6 else -x
 # test
 row1 = [1, 0]
 row2 = [2, 3]
@@ -212,8 +228,8 @@ make     = make_matrix
 mul      = mul_matrix
 powm     = pow_matrix
 p        = print_matrix
-swcolumn = swap_column
-swrow    = swap_row
+swcolumn = lambda matr, x, y: swap_column(matr, x+1, y+1)
+swrow    = lambda matr, x, y: swap_row(matr, x+1, y+1)
 tran     = transfer
 E_matr   = identity_matrix
 reverse  = reverse_matrix
