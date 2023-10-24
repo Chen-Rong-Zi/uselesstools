@@ -1,7 +1,10 @@
 # encoding=UTF-8
 
+def is_argment(matr):
+    return hasattr(matr, '__call__') and matr("cls") == "Argment"
+
 def is_matrix(matr):
-    return hasattr(matr, '__call__')
+    return hasattr(matr, '__call__') and matr("cls") == 'matrix'
 
 def make_matrix(*args):
     row, column = (args[0], args[0]) if len(args) == 1 else (args[0], args[1])
@@ -10,21 +13,47 @@ def make_matrix(*args):
         rows_list.append([int(input(f"[{i+1},{j+1}]: ")) for j in range(column)])
     return matrix(rows_list)
 
-def matrix(*args, Type='matrix'):
-    assert Type == 'matrix'
-    assert len(args[0]) >= 1, "matrix must has lenth and width"
-    rowLenth = len(args[0][0])
-    for row in args[0]:
-        assert rowLenth == len(row) and type(row) == list
-    def matrix_function(x, y='noparameter'):
-        if x == 'row':
-            return len(args[0])
-        if x == 'column':
-            return len(args[0][0])
-        if y == 'noparameter':
-            return args[0][x]
-        return args[0][x][y]
-    return matrix_function
+def matrix(*args, cls='matrix'):
+    if cls == "matrix":
+        assert cls == 'matrix'
+        assert len(args[0]) >= 1, "matrix must has lenth and width"
+        rowLenth = len(args[0][0])
+        for row in args[0]:
+            assert rowLenth == len(row) and type(row) == list
+
+        def matrix_function(x, y='noparameter', cls=cls):
+            if x == 'cls':
+                return cls
+            if x == 'row':
+                return len(args[0])
+            if x == 'column':
+                return len(args[0][0])
+            if y == 'noparameter':
+                return args[0][x]
+            assert x >= 0 and y >= 0, "x, y must at least 0"
+            return args[0][x][y]
+
+        return matrix_function
+
+    if cls == "Augment":
+        assert len(args) == 2 and is_matrix(args[0]) and is_matrix(args[1]), "only matrix can be added up to argument matrix"
+        row_list = []
+        for i in range(args[0]('row')):
+            row_list.append(args[0](i) + args[1](i))
+        augment = matrix(row_list)
+
+        def argment_function(x, y='noparameter', cls=cls):
+            if x == 'cls':
+                return cls
+            if x == 'row':
+                return args[0]('row')
+            if x == 'column':
+                return args[1]('column')
+            if y == 'noparameter':
+                return augment(x)
+            assert x >= 0 and y >= 0, "x, y must at least 0"
+            return augment(x, y)
+
 
 def print_matrix(matrix):
     assert is_matrix(matrix), "must be a matrix"
@@ -206,6 +235,22 @@ def five_place(x):
     else:
         decimal = (-x) % 1
         return -int(x) if (decimal) <= 1e-6 else -(int(x)+1) if (1-decimal) <= 1e6 else -x
+
+def add_row(matr, k, x, y):
+    new_rows = []
+    temp_row = [i * k for i in matr(x)]
+    for i in range(matr('row')):
+        if i == y:
+            new_rows.append([temp_row[i]+matr(y, i) for i in range(matr('column'))])
+            continue
+        new_rows.append(copy_list(matr(i)))
+    return matrix(new_rows)
+
+# def rref(matr):
+#     for i in range(matr('row')):
+#         for j in range(matr('column')):
+# 
+
 # test
 row1 = [1, 0]
 row2 = [2, 3]
@@ -217,6 +262,7 @@ row7 = [2, 3]
 row8 = [4, 5]
 row9 = [2, 1]
 row10 = [4, 3]
+f = lambda matr: lambda x, y: matr(x-1, y-1)
 a = matrix([row6, row7, row8])
 b = matrix([row9, row10])
 c = matrix([row1, row2, row3])
