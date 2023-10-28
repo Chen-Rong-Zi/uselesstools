@@ -9,8 +9,12 @@ def is_matrix(matr):
 def make_matrix(*args):
     row, column = (args[0], args[0]) if len(args) == 1 else (args[0], args[1])
     rows_list = []
-    for i in range(row):
-        rows_list.append([int(input(f"[{i+1},{j+1}]: ")) for j in range(column)])
+    try:
+        for i in range(row):
+            rows_list.append([int(input(f"[{i+1},{j+1}]: ")) for j in range(column)])
+    except KeyboardInterrupt:
+        print('\nexit, try again!')
+        return
     return matrix(rows_list)
 
 def matrix(*args, cls='matrix'):
@@ -58,6 +62,9 @@ def matrix(*args, cls='matrix'):
             assert x >= 0 and y >= 0, "x, y must at least 0"
             return augment(x, y)
         return augment_function
+
+def augment(m1, m2):
+    return matrix(m1, m2, cls="A")
 
 def print_matrix(matr, end=''):
     assert is_matrix(matr) or is_augment(matr), "must be a matrix"
@@ -136,6 +143,8 @@ def kth_matrix(matr, k):
     return matrix(new_rows)
 
 def pow_matrix(matr, n):
+    if n == 0:
+        return identity_matrix(matr("row"))
     x = copy_matrix(matr)
     for i in range(n-1):
         matr = mul_matrix(matr, x)
@@ -170,8 +179,8 @@ def adjoint_matrix(matr):
     for i in range(matr('row')):
         new_rows = []
         for j in range(matr('column')):
-            row.append(determinant(cofactor(matr, i, j)) * pow(-1, i+j))
-        rows_list.append(row)
+            new_rows.append(determinant(cofactor(matr, i, j)) * pow(-1, i+j))
+        rows_list.append(new_rows)
     return transfer(matrix(rows_list))
 
 def reverse_matrix(matr):
@@ -233,7 +242,8 @@ def clean_product(x):
         decimal = x % 1
         return int(x) if (decimal) <= 1e-6 else int(x)+1 if (1-decimal) <= 1e-6 else x
     else:
-        decimal = (-x) % 1
+        x = abs(x)
+        decimal = x % 1
         return -int(x) if (decimal) <= 1e-6 else -(int(x)+1) if (1-decimal) <= 1e-6 else -x
 
 def add_row(matr, k, x, y):
@@ -251,7 +261,7 @@ def rref(matr, display=False, operation=False):
 
     if is_augment(matr):
         a, b = matr('a'), matr('b')
-        a, oper_list = rref(a, opers=True)
+        a, oper_list = rref(a, operation=True)
         for i in oper_list:
             b = mul_matrix(i, b)
         return matrix(a, b, cls="Augment")
@@ -272,6 +282,7 @@ def rref(matr, display=False, operation=False):
                     if matr(i, i) != 0: break
                 if  k is None or (k == matr("row") - 1): continue
 
+            print(f"matr({j},{i}) = {matr(j, i)}, matr({i}, {i}) = {matr(i, i)}, -(matr(j, i)/matr(i, i)) = {-(matr(j, i)/matr(i, i))}")
             matr, oper = (add_row(matr, -(matr(j, i)/matr(i, i)), i, j))
             oper_list.append(oper)
             if display:
