@@ -1,7 +1,6 @@
 # encoding=UTF-8
 from math import gcd
 from fractions import Fraction
-del Fraction.__repr__
 Fraction.__repr__ = Fraction.__str__
 
 class Matrix:
@@ -29,7 +28,7 @@ class Matrix:
             matrix_string += "("
             for j in range(self.column):
                 max_lenth_in_a_column = lenth_list[j]
-                value                = self.get(i, j)
+                value                 = self.get(i, j)
                 seperator             = ', '
                 trailing              = ')\n' if i != self.row - 1 else ')'
                 matrix_string += str(value).rjust(max_lenth_in_a_column)       # numbers in matrix
@@ -87,19 +86,24 @@ class Matrix:
     def tran(self):
         return Matrix(self.columns)
 
+    def cotor(self, row, column):
+        assert self.row == self.column, "只有方阵才有代数余子式"
+        new_matr = [ [self.get(i, j) for j in range(self.column) if j != column - 1] for i in range(self.row) if i != row - 1]
+        return Matrix(new_matr)
+
     def cofactor(self, row, column):
         assert self.row == self.column, "只有方阵才有代数余子式"
         new_matr = [ [self.get(i, j) for j in range(self.column) if j != column] for i in range(self.row) if i != row]
         return Matrix(new_matr)
 
-    def adjoint_matrix(self):
+    def adjoint(self):
         assert self.row == self.column, "只有方阵才有伴随矩阵"
         rows_list = [[ self.cofactor(i, j).determinant() * pow(-1, i+j) for j in range(self.column) ] for i in range(self.row)]
         return Matrix(rows_list).tran()
 
-    def reverse_matrix(self):
+    def reverse(self):
         assert self.determinant() != 0, "只有方阵才有代数余子式"
-        return self.adjoint_matrix().kth( 1/self.determinant())
+        return self.adjoint().kth( 1/self.determinant())
 
     def determinant(self):
         assert self.row == self.column, "只有方阵才有行列式"
@@ -110,12 +114,12 @@ class Matrix:
 
     def swap_row(self, x, y, oper=False):
         E = identity_matrix(self.row, x, y)
-        return (mul_matrix(E, self), E) if oper else mul_matrix(E, self)
+        return (E * self, E) if oper else (E * self)
 
     def swap_column(self, x, y, oper=False):
         transfered = self.tran()
         E = identity_matrix(transfered.row, x, y)
-        return (mul_matrix(E, transfered).tran(), E) if oper else mul_matrix(E, transfered).tran()
+        return ((E * transfered).tran(), E) if oper else (E * transfered).tran()
 
     def add_row(self, k, x, y, oper=False):
         E_rows = []
@@ -150,13 +154,15 @@ class Matrix:
                         if matr.get(column, column) != 0: break
                     if  k is None or matr.get(column, column) == 0: continue
 
-                matr.add_row(-(matr.get(row, column)/matr.get(column, column)), column, row)    # matr.get(row, column) for free_varible value
+                scale = -(matr.get(row, column) / matr.get(column, column))
+                matr.add_row(scale, column, row)    # matr.get(row, column) for free_varible value
                 if display: print(matr, end='\n\n')
 
             # make every pivot variable equal to 1
             for column in range(min_semi):
                 if matr.get(column, column) != 0 and matr.get(column, column) != 1:
-                    matr.add_row((1/matr.get(column, column)) - 1, column, column)
+                    scale = (1/matr.get(column, column)) - 1
+                    matr.add_row(scale, column, column)
         return matr
 
 class Augment(Matrix):
@@ -206,7 +212,7 @@ class Augment(Matrix):
                     for k in range(column+1, matr.x.row):
                         matr = matr.swap_row(column, k)
                         if matr.get(column, column) != 0: break
-                    if  k is None: continue
+                    if  k is None or matr.get(column, column) == 0: continue
 
                 scale = -(matr.get(row, column)/matr.get(column, column))
                 matr.x.add_row(scale, column, row)
